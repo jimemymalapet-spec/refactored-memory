@@ -1,0 +1,157 @@
+-- โหลด Rayfield UI Library
+local Rayfield = loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
+
+-- สร้างหน้าต่างหลักของสคริปต์
+local Window = Rayfield:CreateWindow({
+   Name = "น้องครีมนะจ๊ะ - Delta Script",
+   LoadingTitle = "กำลังโหลดระบบ น้องครีมนะจ๊ะ...",
+   LoadingSubtitle = "by AI Collaborator",
+   ConfigurationSaving = {
+      Enabled = false,
+      FolderName = "NongCreamConfig",
+      FileName = "Config"
+   },
+   Discord = {
+      Enabled = false,
+      Invite = "noinvite",
+      RememberJoins = true
+   },
+   KeySystem = false, -- ไม่ใช้ระบบคีย์ เพื่อความสะดวกในการใช้งาน
+   KeySettings = {
+      Title = "Key System",
+      Subtitle = "Bypass",
+      Note = "No key required",
+      FileName = "Key",
+      SaveKey = true,
+      GrabKeyFromSite = false,
+      Key = {"1234"}
+   }
+})
+
+-- สร้างแท็บหลัก (Main Tab)
+local MainTab = Window:CreateTab("🏠 หน้าแรก / ฟังก์ชัน", 4483362458)
+
+-- ตัวแปรสถานะ
+local Workspace = game:GetService("Workspace")
+local Players = game:GetService("Players")
+local LocalPlayer = Players.LocalPlayer
+
+local infJumpEnabled = false
+local noclipEnabled = false
+local espEnabled = false
+
+-- 1. กระโดดไม่จำกัด (Infinite Jump)
+MainTab:CreateToggle({
+   Name = "กระโดดไม่จำกัด (Infinite Jump)",
+   CurrentValue = false,
+   Flag = "InfJumpToggle",
+   Callback = function(Value)
+      infJumpEnabled = Value
+   end,
+})
+
+game:GetService("UserInputService").JumpRequest:Connect(function()
+   if infJumpEnabled then
+      if LocalPlayer.Character and LocalPlayer.Character:FindFirstChildOfClass("Humanoid") then
+         LocalPlayer.Character.Humanoid:ChangeState(Enum.HumanoidStateType.Jumping)
+      end
+   end
+end)
+
+-- 2. เดินทะลุ (Noclip)
+MainTab:CreateToggle({
+   Name = "เดินทะลุสิ่งกีดขวาง (Noclip)",
+   CurrentValue = false,
+   Flag = "NoclipToggle",
+   Callback = function(Value)
+      noclipEnabled = Value
+   end,
+})
+
+game:GetService("RunService").Stepped:Connect(function()
+   if noclipEnabled then
+      if LocalPlayer.Character then
+         for _, part in pairs(LocalPlayer.Character:GetDescendants()) do
+            if part:IsA("BasePart") and part.CanCollide then
+               part.CanCollide = false
+            end
+         end
+      end
+   end
+end)
+
+-- 3. มองทะลุ (ESP - Highlights ตัวละครอื่น)
+MainTab:CreateToggle({
+   Name = "มองทะลุ (ESP Players)",
+   CurrentValue = false,
+   Flag = "ESPToggle",
+   Callback = function(Value)
+      espEnabled = Value
+      for _, player in pairs(Players:GetPlayers()) do
+         if player ~= LocalPlayer and player.Character then
+            local highlight = player.Character:FindFirstChild("CreamHighlight")
+            if espEnabled then
+               if not highlight then
+                  local hl = Instance.new("Highlight")
+                  hl.Name = "CreamHighlight"
+                  hl.Adornee = player.Character
+                  hl.FillColor = Color3.fromRGB(0, 255, 128) -- สีเขียวเรืองแสง
+                  hl.OutlineColor = Color3.fromRGB(0, 0, 0)   -- ขอบสีดำ
+                  hl.Parent = player.Character
+               end
+            else
+               if highlight then
+                  highlight:Destroy()
+               end
+            end
+         end
+      end
+   end,
+})
+
+Players.PlayerAdded:Connect(function(player)
+   player.CharacterAdded:Connect(function(character)
+      if espEnabled then
+         task.wait(1)
+         local hl = Instance.new("Highlight")
+         hl.Name = "CreamHighlight"
+         hl.Adornee = character
+         hl.FillColor = Color3.fromRGB(0, 255, 128)
+         hl.OutlineColor = Color3.fromRGB(0, 0, 0)
+         hl.Parent = character
+      end
+   end)
+end)
+
+-- 4. วิ่งไว (WalkSpeed 1-500)
+MainTab:CreateSlider({
+   Name = "ปรับความเร็วเดิน (WalkSpeed)",
+   Range = {16, 500},
+   Increment = 1,
+   Suffix = "Speed",
+   CurrentValue = 16,
+   Flag = "WalkSpeedSlider",
+   Callback = function(Value)
+      if LocalPlayer.Character and LocalPlayer.Character:FindFirstChildOfClass("Humanoid") then
+         LocalPlayer.Character.Humanoid.WalkSpeed = Value
+      end
+   end,
+})
+
+-- รีเซ็ตความเร็วเมื่อตัวละครตายหรือรีสอว์น
+LocalPlayer.CharacterAdded:Connect(function(character)
+   task.wait(0.5)
+   local humanoid = character:FindFirstChildOfClass("Humanoid")
+   if humanoid then
+      -- ดึงค่าจากสไลเดอร์ปัจจุบัน
+      humanoid.WalkSpeed = Rayfield.Flags["WalkSpeedSlider"].CurrentValue or 16
+   end
+end)
+
+-- แจ้งเตือนเมื่อรันสคริปต์สำเร็จ
+Rayfield:Notify({
+   Title = "สำเร็จ!",
+   Content = "โหลดสคริปต์ 'น้องครีมนะจ๊ะ' เรียบร้อยแล้วค่ะ 💕",
+   Duration = 6.5,
+   Image = 4483362458,
+})
